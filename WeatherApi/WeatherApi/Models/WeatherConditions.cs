@@ -78,6 +78,7 @@ namespace WeatherApi.Models
         
         [Key]
         public string Id { set; get; }
+        public string LocationKey { set; get; }
         public string LocalObservationDateTime { set; get; }
         public Int64 EpochTime { set; get; }
         public string WeatherText { set; get; }
