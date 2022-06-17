@@ -1,10 +1,13 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+
 using WeatherApi.Models;
 
 namespace WeatherApi.Controllers
@@ -16,6 +19,7 @@ namespace WeatherApi.Controllers
         private HttpClient client { set; get; }
         private string BaseUrl { set; get; } = "http://dataservice.accuweather.com";
         private string AutocompleteEndpoint { set; get; } = "/locations/v1/cities/autocomplete";
+        private string CurrentConditionsEndpoint { set; get; } = "/currentconditions/v1/{{1}}";
         private ILogger<WeatherController> log { set; get; }
         public WeatherController(ILogger<WeatherController> logger)
         {
@@ -25,7 +29,7 @@ namespace WeatherApi.Controllers
 
 
 
-        [ProducesResponseType(typeof(List<AutocompleteResponse>, 200))]
+        [ProducesResponseType(typeof(List<AutocompleteResponse>), statusCode: 200)]
         [HttpGet]
         public async Task<List<AutocompleteResponse>> Search([FromQuery] string apikey, [FromQuery] string q, [FromQuery] string language)
         {
@@ -45,12 +49,43 @@ namespace WeatherApi.Controllers
 
 
         [HttpGet]
-        public async Task<> GetCurrentWeather
-
-        [HttpGet]
-        public string Test()
+        public async Task<List<WeatherConditions>> GetCurrentWeather([FromQuery] string locationkey, [FromQuery] string apikey, [FromQuery] string language, [FromQuery] bool details = false)
         {
-            return "llol";
+            var url = $"{this.CurrentConditionsEndpoint.Replace("{{1}}", locationkey)}?apikey={apikey}&language={language}&details={details}";
+            var dataResponse = await this.client.GetAsync(url);
+            if (!dataResponse.IsSuccessStatusCode)
+            {
+                this.log.LogError($"Issue with fetching the weather conditions from external API.  location key - {locationkey} , apikey - {apikey} , lang = {language} , details - {details}");
+                return null;
+            }
+            return null;
+
+            //TODO: 
+
+
+        }
+        [HttpGet]
+        public async Task<string> Test()
+        {
+            using (var db = new WeatherDbContext())
+            {
+                try
+                {
+                    var record = new WeatherConditions() {Id = Guid.NewGuid().ToString(), IsDayTime = true };
+                    db.WeatherRecords.Add(record);
+
+                    var res = await db.SaveChangesAsync();
+                    return res.ToString();
+
+                }
+                catch (System.Exception ex)
+                {
+
+
+                }
+                return "";
+
+            }
         }
 
 
